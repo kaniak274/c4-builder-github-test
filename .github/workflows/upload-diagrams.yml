@@ -34,6 +34,8 @@ jobs:
           path: ${{ github.repository }}.wiki
 
       - name: Push to wiki
+        env:
+          CONTEXT_IMAGE_FILE: './context.svg'
         run: |
-          ls -lah
+          envsubst < "CUSTOM.md" > "CUSTOM.md"        
         working-directory: ./generated
