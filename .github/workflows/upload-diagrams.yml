@@ -37,4 +37,6 @@ jobs:
           path: ${{ github.repository }}.wiki
 
       - name: Push to wiki
-        run: ./build_docs.sh ${{ github.repository }}
+        run: |
+          chmod +x build_docs.sh
+          ./build_docs.sh ${{ github.repository }}
