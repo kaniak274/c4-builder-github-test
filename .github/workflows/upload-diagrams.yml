@@ -37,5 +37,9 @@ jobs:
         env:
           CONTEXT_IMAGE_FILE: './context.svg'
         run: |
-          envsubst < "CUSTOM.md" > "CUSTOM.md"        
+          ls -lah
+          envsubst < "CUSTOM.md" > "CUSTOM.md"
+          git add CUSTOM.md
+          git add context.svg
+          git diff-index --quiet HEAD || git commit -m "Update diagrams" && git push
         working-directory: ./generated
