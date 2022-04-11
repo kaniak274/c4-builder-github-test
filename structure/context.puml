@@ -14,6 +14,6 @@ System(test, "TEST", "TEST")
 Rel(test, s3, "Photos upload")
 Rel(test, fcm, "Notification requests")
 
-Rel(admin, test, "Adds recipes, goals, quizzes etc. to the DB")
+Rel(admin, test, "Adds recipes")
 
 @enduml
