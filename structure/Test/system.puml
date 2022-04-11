@@ -1,0 +1,96 @@
+@startuml
+!include https://raw.githubusercontent.com/adrianvlupu/C4-PlantUML/latest/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+Person(admin, "Administrator")
+Person_Ext(customer, "End client", "Merchant's client.")
+Person_Ext(operator, "Operator", "Can receive transactions")
+Person_Ext(merchant, "Merchant", "Owner of the system which integrates with CCG.")
+System_Ext(mersys, "Merchant System", "System which integrates with CCG.")
+System(mdae, "CCG", "Payment proxy which provides embeddable frame for collecting the credit card numbers for payment processing.")
+System_Ext(es, "Amazon SES", "Sends e-mail notifications.")
+System_Ext(sipay, "SiPay", "Credit card payment provider.")
+System_Ext(cognito, "Amazon Cognito", "Backoffice user management.")
+System_Ext(payland, "Payland", "Credit card payment provider.")
+System_Ext(universal_pay, "UniversalPay", "Credit card payment provider.")
+System_Ext(paytef, "PayTef", "Credit card payment provider.")
+System_Ext(s3, "Amazon S3", "Holds merchant configuration.")
+System_Ext(bullettrain, "BulletTrain", "Feature Toggle API.")
+System_Ext(payout, "Payout", "Payout systems.")
+System_Ext(sns, "Amazon SNS", "Sends SMS messages.")
+System_Ext(dropbox, "Dropbox", "Stores documents from merchants.")
+
+
+System_Boundary(mdae, "CCG") {
+    Container(adminpanel, "Admin panel", "Vue.js + Bulma", "Admin panel which allows blocking IP address from accessing the Frame.")
+    Container(backoffice, "Backoffice", "Vue.js + Bulma", "Backoffice for Merchant.")
+    Container(operatorpanel, "Operator panel", "Vue.js + Bulma", "Transactions panel for Merchant")
+    Container(paymentgateway, "Payment Gateway", "Python", "Payment Gateway")
+    Container(frame, "Frame injector", "JavaScript + Bulma", "Embeddable frame for collecting the credit card details.")
+    Container(app, "Backend", "Python, modular monotlith", "Main application providing business logic.")
+    Container(merchantdownloader, "Merchant downloader", "Bash script", "Simple script that polls S3 for merchant configuration.")
+    Container(fs, "Backend FS", "Container filesystem.")
+
+    Container(dbbackofficetransactions, "Backoffice Transactions DB", "PostgreSQL (Aurora)", "Stores transactions for merchants.")
+    Container(dbtransactions, "Transactions DB", "PostgreSQL (Aurora)", "Holds full information relating the transactions, including hashed credit card numbers.")
+    Container(dbadmintransactions, "Admin Transactions DB", "PostgreSQL (Aurora)", "Stores transactions for admin.")
+    Container(dbips, "IP Blacklist DB", "PostgreSQL (Aurora)", "Stores blacklisted IP addresses.")
+    Container(dbendclients, "Authorized End Clients DB", "PostgreSQL (Aurora)", "Stores authorized end clients,")
+    Container(dbmerchantlocks, "Merchant Locks DB", "PostgreSQL (Aurora)", "Store merchants locks.")
+    Container(dbbtb, "BTB DB", "PostgreSQL (Aurora)", "Store BTB transactions information.")
+    Container(dboperatortransactions, "Operator Transactions DB", "PostgreSQL (Aurora)", "Stores transactions for operators.")
+    Container(dbbanks, "Banks DB", "PostgreSQL (Aurora)", "Stores banks intervals.")
+
+    Container(grafana, "Grafana", "System dashboards.")
+
+    Rel(frame, app, "Sends payment requests", "HTTPS")
+    Rel(app, frame, "Serves form", "HTTPS")
+
+    Rel(adminpanel, app, "Passes requests", "HTTPS")
+    Rel(backoffice, app, "Passes requests", "HTTPS")
+    Rel(operatorpanel, app, "Passes requests", "HTTPS")
+    Rel(paymentgateway, app, "Passes requests", "HTTPS")
+
+    Rel(app, dbbackofficetransactions, "Stores data")
+    Rel(app, dbadmintransactions, "Stores data")
+    Rel(app, dbtransactions, "Stores data")
+    Rel(app, dbips, "Stores data")
+    Rel(app, dbendclients, "Stores authorized end clients")
+    Rel(app, dbmerchantlocks, "Stores merchants locks")
+    Rel(app, dbbtb, "Stores BTB transactions information")
+    Rel(app, dboperatortransactions, "Stores data")
+    Rel(app, dbbanks, "Stores data")
+
+    Rel(merchantdownloader, fs, "Saves merchant configuration")
+    Rel(app, fs, "Reads merchant configuration")
+
+    Rel(grafana, dbtransactions, "Reads statistics data.")
+}
+
+Rel(app, sipay, "Performs payment", "SiPay API")
+Rel(app, payland, "Performs payment", "Payland API")
+Rel(app, universal_pay, "Performs payment", "UniversalPay API")
+Rel(app, paytef, "Performs payment", "PayTef API")
+Rel(app, bullettrain, "Checks feature flags", "BulletTrain API")
+
+Rel(customer, frame, "Performs payment")
+Rel(mersys, frame, "Integrates")
+Rel(operator, operatorpanel, "Browses transaction history")
+Rel(merchant, backoffice, "Browses transaction history")
+Rel(app, es, "Sends notifications")
+Rel(admin, adminpanel, "Blocks end client IP addresses")
+Rel(payout, paymentgateway, "Provides authorized end clients.")
+Rel(app, sns, "Sends SMS messages")
+Rel(app, dropbox, "Uploads documents from merchants")
+
+Rel(admin, cognito, "Authenticates")
+Rel(merchant, cognito, "Authenticates")
+Rel(operator, cognito, "Authenticates")
+
+Rel(app, cognito, "Authorizes users")
+Rel(customer, mersys, "Uses")
+
+Rel(merchantdownloader, s3, "Downloads merchant configuration")
+
+@enduml

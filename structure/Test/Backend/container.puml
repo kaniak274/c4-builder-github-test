@@ -1,0 +1,203 @@
+@startuml
+!include https://raw.githubusercontent.com/adrianvlupu/C4-PlantUML/latest/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+System_Ext(es, "Amazon SES", "Sends e-mail notifications.")
+System_Ext(captchaS3, "Amazon S3, ccg-captcha", "Stores captcha images.")
+System_Ext(documentsS3, "Amazon S3, ccg-documents", "Stores documents from merchants.")
+System_Ext(sipay, "SiPay", "Credit card payment provider.")
+System_Ext(cognito, "Amazon Cognito", "Backoffice user management.")
+System_Ext(payland, "Payland", "Credit card payment provider.")
+System_Ext(universal_pay, "UniversalPay", "Credit card payment provider.")
+System_Ext(paytef, "PayTef", "Credit card payment provider.")
+System_Ext(fxmarket, "FxMarket", "Currency rate API.")
+System_Ext(bullettrainapi, "BulletTrain", "Feature Toggle API.")
+System_Ext(sns, "Amazon SNS", "Sends SMS messages.")
+System_Ext(dropbox, "Dropbox", "Stores documents from merchants.")
+
+Container(frame, "Frame", "JavaScript + Bulma")
+Container(backoffice, "Backoffice", "Vue.js + Bulma")
+Container(adminpanel, "Admin panel", "Vue.js + Bulma")
+Container(fs, "Backend FS", "Container filesystem.")
+
+Container_Boundary(backend, "Backend") {
+    Container(grafana, "Grafana", "System dashboards.")
+
+    Component(banks, "banks", "Python, 2-Layered", "Stores information about banks intervals")
+
+    Component(paymentgateway, "payment_gateway", "Flask", "Renders the template containing the credit card form and passes the requests.")
+    Component(ipblacklist, "ip_blacklist", "Python, 2-layered", "Manages the list of blacklisted IP addresses.")
+    Component(policymanager, "policy_manager", "Python, Hexagon", "Handle transaction acceptance policies.")
+
+    Component(paymentprocessor, "payment_processor", "Python, Hexagon", "Contains logic for aggregating transactions to specified payment providers based on the configuration for a merchant. Core module of the application.")
+    Component(transactionrouter, "transaction_router", "Python", "Contains logic for routing some operation called from payment_processor to specific payment gateway")
+
+    Component(banktobank, "bank_to_bank", "Python, 2-Layered", "Contains logic for bank to bank transactions.")
+
+    Component(mailer, "mailer", "Python, 2-layered", "Provides gateway for Amazon SES.")
+    Component(sms, "sms", "Python, 2-layered", "Provides gateway for Amazon SNS with SMS support.")
+
+    Component(sipayconnector, "sipay", "Python, 2-layered", "Connector for SiPay payment provider.")
+    Component(paylandconnector, "payland", "Python, 2-layered", "Connector for Payland payment provider.")
+    Component(universalpayconnector, "universal_pay", "Python, 2-layered", "Connector for UniversalPay payment provider.")
+    Component(paytefconnector, "paytef", "Python, 2-layered", "Connector for PayTef payment provider.")
+    Component(tomprolineconnector, "tomproline", "Python, 2-layered", "Connector for Sipay payment provider for tomproline.")
+
+    Component(endclientverification, "end_client_verification", "Python, 2-layered", "End clients verification.")
+
+    Component(feecalculator, "fee_calculator", "Python, 2-layered", "Provides utilities to convert currencies and calculate fees")
+
+    Component(merchants, "merchants", "Python, 2-layered", "Repository for merchant configuration.")
+
+    Rel(paymentgateway, ipblacklist, "Checks if IP is not blacklisted")
+
+    Rel(paymentgateway, paymentprocessor, "Requests transaction")
+
+    Rel(paymentgateway, policymanager, "Checks policies")
+
+    Rel(transactionrouter, paymentprocessor, "Routes transaction to specified provider")
+
+    Rel(transactionrouter, sipayconnector, "Delegates transaction processing")
+    Rel(transactionrouter, paylandconnector, "Delegates transaction processing")
+    Rel(transactionrouter, universalpayconnector, "Delegates transaction processing")
+    Rel(transactionrouter, paytefconnector, "Delegates transaction processing")
+    Rel(transactionrouter, tomprolineconnector, "Delegates transaction processing")
+
+    Rel(sipayconnector, paymentprocessor, "Updates transaction status")
+    Rel(paylandconnector, paymentprocessor, "Updates transaction status")
+    Rel(universalpayconnector, paymentprocessor, "Updates transaction status")
+    Rel(paytefconnector, paymentprocessor, "Updates transaction status")
+    Rel(tomprolineconnector, paymentprocessor, "Updates transaction status")
+
+    Rel(paymentgateway, sipayconnector, "Processes transactions")
+    Rel(paymentgateway, paylandconnector, "Processes transactions")
+    Rel(paymentgateway, universalpayconnector, "Processes transactions")
+    Rel(paymentgateway, paytefconnector, "Processes transactions")
+    Rel(paymentgateway, tomprolineconnector, "Processes transactions")
+
+    Rel(endclientverification, paymentgateway, "Verifies the end clients")
+
+    Rel(paymentgateway, feecalculator, "Calculates fees")
+
+    Rel(merchants, paymentprocessor, "Provides merchant configuration")
+
+    Component(authenticator, "cognito", "Python, 1-Layered", "Provides authentication gateway for Amazon Cognito for token authentication.")
+
+    Component(admingateway, "admin_gateway", "Flask", "Handles routes for admin panel.")
+    Rel(admingateway, ipblacklist, "Blocks or unblocks addresses")
+
+    Rel(admingateway, authenticator, "Checks for admin access")
+
+    Component(backofficegateway, "backoffice_gateway", "Flask", "Handles routes for backoffice.")
+
+    Rel(backofficegateway, authenticator, "Checks for backoffice access")
+
+    Component(admintransactions, "admin_transactions", "Python, 2-Layered", "Stores the transaction information visible to the admin.")
+
+    Component(backofficetransactions, "backoffice_transactions", "Python, 2-Layered", "Stores the transaction information visible to the merchants.")
+
+    Component(notifications, "notifications", "Python, 2-Layered", "Stores processed transaction in order to notify merchant about status.")
+    Component(operatortransactions, "operator_transactions", "Python, 2-Layered", "Stores the transaction information visible to the operators.")
+
+    Component(main, "main", "Python", "Coordinates application startup.")
+
+    Rel(admintransactions, paymentprocessor, "Reads transaction events")
+    Rel(backofficetransactions, paymentprocessor, "Reads transaction events")
+    Rel(notifications, paymentprocessor, "Reads transaction events")
+    Rel(operatortransactions, paymentprocessor, "Reads transaction events")
+
+    Rel(admingateway, admintransactions, "Gets transactions")
+    Rel(backofficegateway, backofficetransactions, "Gets transactions")
+
+    Rel(admingateway, banks, "Gets intervals")
+    Rel(policymanager, banks, "Gets intervals")
+
+    Rel(main, common_dtos, "Uses dtos")
+
+    Rel(operatortransactions, common_dtos, "Uses dtos")
+    Rel(broker, common_dtos, "Uses dtos")
+    Rel(paymentgateway, common_dtos, "Uses dtos")
+    Rel(paymentprocessor, common_dtos, "Uses dtos")
+    Rel(merchants, common_dtos, "Uses dtos")
+    Rel(policymanager, common_dtos, "Uses dtos")
+    Rel(transactionrouter, common_dtos, "Uses dtos")
+    Rel(admintransactions, common_dtos, "Uses dtos")
+    Rel(backofficetransactions, common_dtos, "Uses dtos")
+    Rel(notifications, common_dtos, "Uses dtos")
+
+    Rel(sipayconnector, common_dtos, "Uses dtos Sipay")
+    Rel(paylandconnector, common_dtos, "Uses dtos")
+    Rel(universalpayconnector, common_dtos, "Uses dtos")
+    Rel(paytefconnector, common_dtos, "Uses dtos")
+    Rel(tomprolineconnector, common_dtos, "Uses dtos")
+
+    Rel(main, admingateway, "Starts")
+    Rel(main, backofficegateway, "Starts")
+    Rel(main, paymentgateway, "Injects dependencies")
+
+    Component(bullettrain, "bullettrain", "Provides BulletTrain client")
+    Rel(paymentgateway, bullettrain, "Provides data from BulletTrain")
+
+    Component(btbgateway, "bank_to_bank_gateway", "Flask", "Handles routes for BTB transactions.")
+    Rel(paymentgateway, btbgateway, "Provides BTB routes")
+
+    Component(lcsgateway, "lcs_gateway", "Flask", "Handles routes for LCS.")
+    Rel(paymentgateway, lcsgateway, "Provides LCS routes.")
+    Rel(lcsgateway, btbgateway, "Provides BTB routes to handle checkout.")
+
+    Component(documentsgatherer, "documents_gatherer", "Python, 2-layered", "Gathering documents from merchants.")
+}
+
+Container(dbbackofficetransactions, "Backoffice Transactions DB", "PostgreSQL (Aurora)", "Stores transactions for merchants.")
+Container(dbtransactions, "Transactions DB", "PostgreSQL (Aurora)", "Holds full information relating the transactions, including hashed credit card numbers.")
+Container(dbadmintransactions, "Admin Transactions DB", "PostgreSQL (Aurora)", "Stores transactions for admin.")
+Container(dbnotifications, "Notification Transactions DB", "PostgreSQL (Aurora)", "Stores transaction's notifications.")
+Container(dbips, "IP Blacklist DB", "PostgreSQL (Aurora)", "Stores blacklisted IP addresses.")
+Container(dbmerchantlocks, "Merchant Locks DB", "PostgreSQL (Aurora)", "Store merchants locks.")
+Container(dbpolicymanager, "Policy Manager DB", "PostgreSQL (Aurora)", "Stores results of policies validation")
+Container(dbbtb, "BTB DB", "PostgreSQL (Aurora)", "Store BTB transactions information.")
+Container(captcharedis, "CAPTCHA redis", "Redis", "Stores mapping between CAPTCHA images and the texts")
+Container(dboperatortransactions, "Operator Transactions DB", "PostgreSQL (Aurora)", "Stores transactions for operators.")
+Container(dbbanks, "Banks DB", "PostgreSQL (Aurora)", "Stores banks intervals.")
+
+Rel(paymentgateway, frame, "Serves", "HTTPS")
+Rel(frame, paymentgateway, "Requests payment", "HTTPS")
+
+Rel(adminpanel, admingateway, "Sends requests", "HTTPS")
+Rel(backoffice, backofficegateway, "Sends requests", "HTTPS")
+
+Rel(sipayconnector, sipay, "Requests transactions", "SiPay API")
+Rel(paylandconnector, payland, "Requests transactions", "Payland API")
+Rel(universalpayconnector, universal_pay, "Requests transactions", "UniversalPay API")
+Rel(paytefconnector, paytef, "Requests transactions", "PayTef API")
+Rel(tomprolineconnector, sipay, "Requests transactions", "SiPay API")
+Rel(mailer, es, "Sends e-mail")
+Rel(sms, sns, "Sends SMS messages.")
+Rel(endclientverification, captchaS3, "Stores captcha images")
+Rel(endclientverification, captcharedis, "Manages CAPTCHA results")
+
+Rel(documentsgatherer, documentsS3, "Stores documents in temporary storage")
+Rel(documentsgatherer, dropbox, "Uploads documents from merchants")
+
+Rel(authenticator, cognito, "Checks tokens", "Cognito API")
+Rel(feecalculator, fxmarket, "Retrieves currency rate", "REST API")
+
+
+Rel(backofficetransactions, dbbackofficetransactions, "Stores data")
+Rel(admintransactions, dbadmintransactions, "Stores data")
+Rel(notifications, dbnotifications, "Stores data")
+Rel(paymentprocessor, dbtransactions, "Stores data")
+Rel(ipblacklist, dbips, "Stores data")
+Rel(grafana, dbtransactions, "Reads statistics data.")
+Rel(merchants, dbmerchantlocks, "Stores locks")
+Rel(policymanager, dbpolicymanager, "Stores policies validation results")
+Rel(banktobank, dbbtb, "Stores BTB transactions information")
+Rel(operatortransactions, dboperatortransactions, "Stores data")
+Rel(banks, dbbanks, "Stores data")
+
+Rel(merchants, fs, "Reads merchant configuration")
+
+Rel(bullettrain, bullettrainapi, "Sends requests", "BulletTrain API")
+
+@enduml

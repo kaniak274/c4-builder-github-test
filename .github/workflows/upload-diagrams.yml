@@ -37,11 +37,4 @@ jobs:
           path: ${{ github.repository }}.wiki
 
       - name: Push to wiki
-        run: |
-          mv ./generated/context.svg ${{ github.repository }}.wiki/
-          cd ${{ github.repository }}.wiki
-          git config --global user.email "kaniak274@gmail.com"
-          git config --global user.name "Kamil Kucharski"
-          git add context.svg
-          git diff-index --quiet HEAD || git commit -m "Update diagrams"
-          git push
+        run: ./build_docs.sh ${{ github.repository }}
