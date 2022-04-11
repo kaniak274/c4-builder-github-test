@@ -35,8 +35,5 @@ jobs:
 
       - name: Push to wiki
         run: |
-          cd wiki
           ls -lah
-          git add .
-          git diff-index --quiet HEAD || git commit -m "Update diagrams" && git push
         working-directory: ./generated
