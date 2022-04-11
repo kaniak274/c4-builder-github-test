@@ -28,15 +28,15 @@ git config --global user.name "Kamil Kucharski"
 cat > Custom.md <<- EOM
 ## C1 Diagram
 
-![context]($CONTEXT_FILE)
+![context](./diagrams/$CONTEXT_FILE)
 
 ## C2 Diagram
 
-![context]($SYSTEM_FILE)
+![context](./diagrams/$SYSTEM_FILE)
 
 ## Backend C3 Diagram
 
-![context]($CONTAINER_FILE)
+![context](./diagrams/$CONTAINER_FILE)
 
 EOM
 
