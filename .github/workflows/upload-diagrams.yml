@@ -19,7 +19,6 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '16'
-          cache: npm
 
       - name: Install c4builder
         run: npm i -g c4builder
