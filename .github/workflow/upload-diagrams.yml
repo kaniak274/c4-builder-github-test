@@ -1,0 +1,42 @@
+name: Upload diagrams
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  upload-diagrams:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js ⚙️
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: npm
+
+      - name: Install c4builder
+        run: npm i -g c4builder
+
+      - name: Generate docs
+        run: c4builder
+
+      - name: Checkout wiki
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+
+      - name: Push to wiki
+        run: |
+          cd wiki
+          ls -lah
+          git add .
+          git diff-index --quiet HEAD || git commit -m "Update diagrams" && git push
+        working-directory: ./generated

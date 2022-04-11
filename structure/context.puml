@@ -1,0 +1,19 @@
+@startuml
+!include https://raw.githubusercontent.com/adrianvlupu/C4-PlantUML/latest/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+Person(admin, "Administrator")
+
+System_Ext(s3, "Amazon S3", "Stores photos of database items.")
+System_Ext(cognito, "Amazon Cognito", "User management system.")
+System_Ext(fcm, "Firebase Cloud Messaging", "Sends notifications.")
+
+System(test, "TEST", "TEST")
+
+Rel(test, s3, "Photos upload")
+Rel(test, fcm, "Notification requests")
+
+Rel(admin, test, "Adds recipes, goals, quizzes etc. to the DB")
+
+@enduml
