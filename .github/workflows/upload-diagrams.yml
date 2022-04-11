@@ -30,7 +30,8 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: ${{ github.repository }}.wiki
-          path: wiki
+          ref: master
+          path: ${{ github.repository }}.wiki
 
       - name: Push to wiki
         run: |
