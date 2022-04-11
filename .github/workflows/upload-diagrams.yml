@@ -39,4 +39,4 @@ jobs:
       - name: Push to wiki
         run: |
           chmod +x build_docs.sh
-          ./build_docs.sh ${{ github.repository }}
+          ./build_docs.sh ${{ github.repository }} "Custom.md" "./generated/"
